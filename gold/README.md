@@ -20,4 +20,21 @@ sample were simply unlabelled); the rest is repeal/interpretation boilerplate, l
 Stability: recall 1.00 at batch sizes 25 and 40; 0.94 at 60 (one miss); selected-row counts vary ~±10% run to run.
 Prompt v2 was written once, not tuned on the gold set; only two documents exist, so this is not a held-out result.
 
+## Precision (review sheets)
+
+`python -m reg_intel.cli precision-export` writes `gold/precision/<doc>.csv`: every distinct line v2 selected.
+Fill the `human` column with `y` (operative requirement/prohibition/condition/permission), `f` (real but a
+fragment that needs its lead-in line) or `n` (definition, repeal, header, boilerplate). `human` overrides
+`claude_draft`; blanks are ignored. `python -m reg_intel.cli precision` reports
+**strict** = y/judged and **lenient** = (y+f)/judged. Re-exporting keeps verdicts already entered.
+
+| Doc | Lines | strict | lenient | y / f / n | human-reviewed |
+|---|---|---|---|---|---|
+| 13100 payments banks | 35 | 0.86 | 0.91 | 30 / 2 / 3 | 0 |
+| 10738 FEMA insurance | 55 | 0.76 | 0.98 | 42 / 12 / 1 | 0 |
+
+All verdicts are Claude's draft (single read, same model family as the extractor) — treat as indicative until a person fills `human`.
+Verdicts are matched by line text, so a re-run that selects different lines leaves new lines blank for review.
+The 5 mutual-fund lines in 13100 count as real obligations (precision is about obligation-ness, not insurer scope).
+
 Do not commit RBI PDFs/text; labels + URLs only. See `TARGETS.md` for the next documents.

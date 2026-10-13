@@ -43,3 +43,59 @@ def score(db, g: dict, prompt_ver: str | None = None) -> dict:
     return {"gold": n, "recall": round((n - len(missed)) / n, 2) if n else None,
             "extracted": len(ex), "grounded_share": round(len(grounded) / len(ex), 2) if ex else None,
             "missed": missed}
+
+
+# ---- precision: review sheets ----------------------------------------------
+# One CSV per gold document in gold/precision/<gold-key>.csv listing every distinct
+# line the extractor selected. Verdicts: y = states an operative requirement /
+# prohibition / condition / permission; f = fragment (real, but unreadable without its
+# lead-in line); n = not an obligation (definition, boilerplate, repeal, header).
+# `human` overrides `claude_draft`. Precision is only trustworthy as `human` fills in.
+import csv
+import os
+
+PRECISION_DIR = "gold/precision"
+COLS = ["citation", "modality", "claude_draft", "human", "note"]
+
+
+def export_review(db, g: dict, key: str, prompt_ver: str) -> str:
+    """Write/refresh the review sheet, preserving verdicts already entered (matched by citation)."""
+    path = os.path.join(PRECISION_DIR, f"{key}.csv")
+    old = {}
+    if os.path.exists(path):
+        old = {r["citation"]: r for r in csv.DictReader(open(path, newline="", encoding="utf-8"))}
+    doc = db.execute("SELECT id FROM document WHERE url=?", (g["url"],)).fetchone()[0]
+    seen, rows = set(), []
+    for c, m in db.execute("SELECT citation, modality FROM obligation WHERE doc_id=? AND prompt_ver=? ORDER BY id",
+                           (doc, prompt_ver)):
+        if c in seen:
+            continue
+        seen.add(c)
+        prev = old.get(c, {})
+        rows.append({"citation": c, "modality": m, "claude_draft": prev.get("claude_draft", ""),
+                     "human": prev.get("human", ""), "note": prev.get("note", "")})
+    os.makedirs(PRECISION_DIR, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLS)
+        w.writeheader()
+        w.writerows(rows)
+    return path
+
+
+def precision(key: str) -> dict | None:
+    path = os.path.join(PRECISION_DIR, f"{key}.csv")
+    if not os.path.exists(path):
+        return None
+    rows = list(csv.DictReader(open(path, newline="", encoding="utf-8")))
+    verdicts, human_n = [], 0
+    for r in rows:
+        v = (r["human"] or r["claude_draft"]).strip().lower()
+        human_n += bool(r["human"].strip())
+        if v in ("y", "f", "n"):
+            verdicts.append(v)
+    n = len(verdicts)
+    if not n:
+        return {"rows": len(rows), "judged": 0}
+    y, f, no = (verdicts.count(x) for x in "yfn")
+    return {"rows": len(rows), "judged": n, "human_reviewed": human_n,
+            "strict": round(y / n, 2), "lenient": round((y + f) / n, 2), "y": y, "f": f, "n": no}

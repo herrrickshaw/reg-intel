@@ -59,3 +59,18 @@ def test_v2_cites_source_line_not_model_text(tmp_path):
     assert res["selected"] == 1  # out-of-range index ignored
     cit = db.execute("SELECT citation FROM obligation").fetchone()[0]
     assert cit == "Banks shall report fraud to the RBI within 14 days."
+
+
+def test_precision_human_overrides_draft(tmp_path, monkeypatch):
+    import csv
+    from reg_intel import score
+    monkeypatch.setattr(score, "PRECISION_DIR", str(tmp_path))
+    rows = [{"citation": "a", "modality": "must", "claude_draft": "y", "human": "", "note": ""},
+            {"citation": "b", "modality": "must", "claude_draft": "y", "human": "n", "note": ""},
+            {"citation": "c", "modality": "must", "claude_draft": "f", "human": "", "note": ""},
+            {"citation": "d", "modality": "must", "claude_draft": "", "human": "", "note": ""}]  # unjudged: ignored
+    with open(tmp_path / "k.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=score.COLS); w.writeheader(); w.writerows(rows)
+    p = score.precision("k")
+    assert (p["judged"], p["human_reviewed"], p["y"], p["f"], p["n"]) == (3, 1, 1, 1, 1)
+    assert p["strict"] == 0.33 and p["lenient"] == 0.67

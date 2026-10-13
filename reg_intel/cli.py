@@ -6,7 +6,7 @@ from . import extract, fetch_rbi, store
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["fetch", "extract", "report", "verify", "gold"])
+    ap.add_argument("cmd", choices=["fetch", "extract", "report", "verify", "gold", "precision-export", "precision"])
     ap.add_argument("--limit", type=int, default=5)
     ap.add_argument("--mode", choices=["lines", "generate"], default="lines",
                     help="lines = v2 line-indexed (default); generate = v1 model-written quotes")
@@ -18,6 +18,16 @@ def main() -> None:
     db = store.connect(a.db)
     if a.cmd == "verify":
         print("ledger chain intact" if store.verify_chain(db) else "LEDGER TAMPERED")
+    elif a.cmd in ("precision-export", "precision"):
+        from . import score
+        for g in score.load_gold():
+            key = g["url"].rsplit("id=", 1)[1]
+            key = next(k for k in [p.split("/")[-1][:-5] for p in __import__("glob").glob("gold/*.json")]
+                       if key in k)
+            if a.cmd == "precision-export":
+                print("wrote", score.export_review(db, g, key, "v2-lines"))
+            else:
+                print(key, score.precision(key))
     elif a.cmd == "gold":
         from . import score
         for g in score.load_gold():
