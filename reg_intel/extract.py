@@ -169,7 +169,14 @@ def find_lead_in(lines: list[str], i: int, depth: int = 2, window: int = 15) -> 
     - Otherwise a line starting lowercase continues a sentence: prepend the sentence head.
     Never crosses the start of an earlier numbered paragraph ('12. ...')."""
     line = lines[i]
+    if _PARA.match(line):  # starts a new numbered paragraph: self-contained or a head, never a list tail
+        return ""
     kind = _marker_kind(line)
+    if kind is None and line[:1].islower():  # unmarked lowercase start = sentence continuation
+        j = i - 1
+        while j > 0 and lines[j][:1].islower() and not _MARKER.match(lines[j]):
+            j -= 1
+        return " ".join(lines[max(j, 0):i]) if j >= 0 else ""
     tail_of_list = i > 0 and kind is None and lines[i - 1].rstrip().endswith(_LISTY_END) and depth > 0
     if kind or _is_item(line) or tail_of_list:
         for j in range(i - 1, max(i - window, -1) - 1, -1):
@@ -180,11 +187,6 @@ def find_lead_in(lines: list[str], i: int, depth: int = 2, window: int = 15) -> 
             if _PARA.match(cur):
                 return ""
         return ""
-    if line[:1].islower():
-        j = i - 1
-        while j > 0 and lines[j][:1].islower() and not _MARKER.match(lines[j]):
-            j -= 1
-        return " ".join(lines[max(j, 0):i]) if j >= 0 else ""
     return ""
 
 
