@@ -60,11 +60,20 @@ def openai_compatible_llm() -> tuple[Callable[[str], str], str]:
     client = OpenAI(api_key=key, base_url=base)
 
     def call(prompt: str) -> str:
-        r = client.chat.completions.create(
-            model=model, temperature=0, max_tokens=8000,
-            response_format={"type": "json_object"},
-            messages=[{"role": "user", "content": prompt}])
-        return r.choices[0].message.content
+        import time
+        for attempt in range(4):  # free-tier TPM limits: back off and retry
+            try:
+                r = client.chat.completions.create(
+                    model=model, temperature=0, max_tokens=5000,
+                    response_format={"type": "json_object"},
+                    messages=[{"role": "user", "content": prompt}])
+                return r.choices[0].message.content
+            except Exception as e:  # noqa: BLE001
+                if getattr(e, "status_code", None) == 400 and "json_validate_failed" in str(e):
+                    return ""  # reasoning model ran out of tokens; caller logs a parse error
+                if attempt == 3 or getattr(e, "status_code", None) not in (413, 429):
+                    raise
+                time.sleep(20 * (attempt + 1))
 
     return call, model
 
@@ -93,3 +102,56 @@ def extract_document(db, doc_id: int, llm: Callable[[str], str], model: str) -> 
             dropped += not grounded
     db.commit()
     return {"grounded": kept, "ungrounded": dropped, "parse_errors": failed}
+
+
+# ---- v2: line-indexed extraction -------------------------------------------
+# The model classifies numbered source lines instead of generating quotes, so the
+# citation is the source line itself (verbatim by construction). The grounding gate
+# therefore stops being informative in this mode; precision must be judged by
+# reviewing flagged lines, and recall by the gold set.
+PROMPT_V2_VER = "v2-lines"
+PROMPT_V2 = """You review numbered lines from an RBI regulatory document.
+Select EVERY line that states a requirement, prohibition, condition, permission or
+deadline that applies to a regulated entity, its Board, staff or a customer-facing
+process. Include sub-clauses and list items. Exclude: definitions, headings, table of
+contents, letterhead, addresses, signatures, footnotes, repeal/saving text, and
+pure cross-references. When unsure, INCLUDE the line.
+Return ONLY JSON: {"obligations":[{"i":<line number>,"actor":str,"modality":"must|must_not|may",
+"action":str,"deadline":str|null}]}. Do not quote text; refer to lines by number only.
+
+LINES:
+"""
+
+
+def numbered_batches(text: str, per_batch: int = 40, min_len: int = 25):
+    lines = [l.strip() for l in text.split("\n") if len(l.strip()) >= min_len]
+    for k in range(0, len(lines), per_batch):
+        yield lines[k:k + per_batch]
+
+
+def extract_document_v2(db, doc_id: int, llm: Callable[[str], str], model: str,
+                        per_batch: int = 40) -> dict:
+    text = db.execute("SELECT raw_text FROM document WHERE id=?", (doc_id,)).fetchone()[0]
+    kept = failed = 0
+    for batch in numbered_batches(text, per_batch):
+        prompt = PROMPT_V2 + "\n".join(f"{n}: {l}" for n, l in enumerate(batch))
+        out = llm(prompt)
+        store.log_event(db, "extract_v2", prompt, out, model, PROMPT_V2_VER)
+        try:
+            obs = parse_json(out).get("obligations", [])
+        except ValueError:
+            store.log_event(db, "extract_parse_error", prompt, out, model, PROMPT_V2_VER)
+            failed += 1
+            continue
+        for ob in obs:
+            i = ob.get("i")
+            if not isinstance(i, int) or not 0 <= i < len(batch):
+                continue
+            db.execute(
+                "INSERT INTO obligation(doc_id,actor,modality,action,deadline,citation,grounded,model,prompt_ver)"
+                " VALUES(?,?,?,?,?,?,?,?,?)",
+                (doc_id, ob.get("actor"), ob.get("modality"), ob.get("action"), ob.get("deadline"),
+                 batch[i], 1, model, PROMPT_V2_VER))
+            kept += 1
+    db.commit()
+    return {"selected": kept, "parse_errors": failed}

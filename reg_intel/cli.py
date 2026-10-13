@@ -8,6 +8,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["fetch", "extract", "report", "verify", "gold"])
     ap.add_argument("--limit", type=int, default=5)
+    ap.add_argument("--mode", choices=["lines", "generate"], default="lines",
+                    help="lines = v2 line-indexed (default); generate = v1 model-written quotes")
     ap.add_argument("--db", default="data/reg_intel.db")
     a = ap.parse_args()
     if a.cmd == "fetch":
@@ -31,7 +33,8 @@ def main() -> None:
         for (did,) in db.execute(
                 "SELECT id FROM document WHERE id NOT IN (SELECT doc_id FROM obligation) LIMIT ?",
                 (a.limit,)).fetchall():
-            print(did, extract.extract_document(db, did, llm, model))
+            fn = extract.extract_document_v2 if a.mode == "lines" else extract.extract_document
+            print(did, fn(db, did, llm, model))
     else:
         for r in db.execute("SELECT d.title, SUM(o.grounded), COUNT(*) FROM obligation o "
                             "JOIN document d ON d.id=o.doc_id GROUP BY d.id"):

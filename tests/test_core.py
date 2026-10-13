@@ -48,3 +48,14 @@ def test_bad_json_is_logged_not_fatal(tmp_path):
     db.execute("INSERT INTO document(source,url,title,sha256,raw_text) VALUES('RBI','u','t','h',?)", (SRC,))
     res = extract.extract_document(db, 1, lambda p: '{"obligations": [oops', "fake")
     assert res["parse_errors"] == 1 and store.verify_chain(db)
+
+
+def test_v2_cites_source_line_not_model_text(tmp_path):
+    db = store.connect(tmp_path / "t.db")
+    src = "Heading line that is long enough to keep\nBanks shall report fraud to the RBI within 14 days."
+    db.execute("INSERT INTO document(source,url,title,sha256,raw_text) VALUES('RBI','u','t','h',?)", (src,))
+    fake = '{"obligations":[{"i":1,"actor":"Banks","modality":"must","action":"report","deadline":"14 days"},{"i":99}]}'
+    res = extract.extract_document_v2(db, 1, lambda p: fake, "fake")
+    assert res["selected"] == 1  # out-of-range index ignored
+    cit = db.execute("SELECT citation FROM obligation").fetchone()[0]
+    assert cit == "Banks shall report fraud to the RBI within 14 days."

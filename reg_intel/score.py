@@ -31,9 +31,12 @@ def validate(db, g: dict) -> list[str]:
     return [o["citation"][:80] for o in g["obligations"] if not verify_citation(o["citation"], row[0])]
 
 
-def score(db, g: dict) -> dict:
+def score(db, g: dict, prompt_ver: str | None = None) -> dict:
     row = db.execute("SELECT id FROM document WHERE url=?", (g["url"],)).fetchone()
-    ex = db.execute("SELECT citation, grounded FROM obligation WHERE doc_id=?", (row[0],)).fetchall()
+    q, args = "SELECT citation, grounded FROM obligation WHERE doc_id=?", [row[0]]
+    if prompt_ver:
+        q, args = q + " AND prompt_ver=?", args + [prompt_ver]
+    ex = db.execute(q, args).fetchall()
     grounded = [c for c, ok in ex if ok]
     missed = [o["citation"] for o in g["obligations"] if not any(_match(o["citation"], c) for c in grounded)]
     n = len(g["obligations"])
