@@ -1,0 +1,9 @@
+[project]
+name = "reg-intel"
+version = "0.1.0"
+description = "Auditable regulatory-obligation extraction for Indian banks/insurers (step 1: RBI Master Directions)"
+requires-python = ">=3.10"
+dependencies = ["requests", "beautifulsoup4", "pypdf", "openai"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
