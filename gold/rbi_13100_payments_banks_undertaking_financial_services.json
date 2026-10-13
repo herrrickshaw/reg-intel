@@ -1,0 +1,144 @@
+{
+ "url": "https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=13100",
+ "title": "RBI (Payments Banks - Undertaking of Financial Services) Directions, 2025",
+ "topic": "insurer/bancassurance",
+ "status": "DRAFT - labelled by Claude from a full read; needs human review",
+ "scope": "insurance-distribution and general conduct obligations; mutual-fund-only obligations (para 14) deliberately excluded",
+ "obligations": [
+  {
+   "actor": "Board",
+   "modality": "must",
+   "citation": "The Board of a bank shall be responsible for approval of policies, and risk governance in respect of various activities undertaken by the bank."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank shall put in place Board-approved policies for,"
+  },
+  {
+   "actor": "Board",
+   "modality": "must",
+   "citation": "In respect of insurance distribution business, the Board shall ensure that a robust internal grievance redressal mechanism is in place."
+  },
+  {
+   "actor": "Payments Bank",
+   "modality": "must_not",
+   "citation": "Payment Banks cannot set up subsidiaries to undertake any non-banking financial services activity."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "There shall be a policy which shall comprehensively cover the said business including identification of various risks associated with it and an appropriate risk mitigation framework, including adherence to capital allocation norms;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "The instructions / guidelines on KYC / AML / CFT applicable to banks, issued by RBI from time to time, shall be complied with;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "The general principles as enunciated in the Charter of Customer Rights issued by RBI shall be adhered to;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "The specific conditions prescribed for the respective businesses in Chapter IV shall be complied with in addition to the instructions / regulations of respective regulators such as SEBI, IRDAI and PFRDA, as applicable"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank shall obtain prior approval of RBI before engaging in a financial activity other than those stated in Chapter IV."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank desirous of undertaking any business that requires prior approval / no-objection of RBI shall submit an application through Pravaah Portal"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "Agency business shall be undertaken only for the products and services in which a bank is permitted to deal in as per Banking Regulation Act, 1949."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "The service shall be provided on fee basis, without any risk participation."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank shall undertake distribution of Insurance units on a non-risk sharing basis and not requiring commitment of their own funds with the prior approval of RBI and after complying with the requirements of the sectoral regulator for such products."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "There shall be a Board approved policy encompassing the model of insurance distribution to be adopted, issues of customer appropriateness, suitability, and grievance redressal;"
+  },
+  {
+   "actor": "Insurance broker",
+   "modality": "must",
+   "citation": "The deposit to be maintained by an insurance broker as per the IRDAI (Licensing of Banks as Insurance Brokers) Regulations, 2013, as amended from time to time, shall be maintained with a scheduled commercial bank other than itself;"
+  },
+  {
+   "actor": "Bank employees",
+   "modality": "must",
+   "citation": "All employees dealing with insurance agency / broking business shall possess the requisite qualification prescribed by IRDAI;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "There shall be standardised system of assessing the need/ suitability of products for a customer and the initiation / transaction processes shall be segregated."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "Products with investment components shall require the bank to necessarily undertake a customer need assessment prior to sale"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank shall treat its customers fairly, honestly and transparently, with regard to suitability and appropriateness of the insurance product sold."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "It shall be ensured that performance assessment and incentive structure for staff is not violative of Section 10(1) (ii) of the BR Act, 1949 or the guidelines issued by IRDAI in payment of commissions / brokerage / incentives."
+  },
+  {
+   "actor": "Insurance company",
+   "modality": "must_not",
+   "citation": "It shall also be ensured that no incentive (cash or non-cash) is paid to the staff engaged in insurance broking / corporate agency services by the insurance company;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must_not",
+   "citation": "A bank shall not follow any restrictive practices of forcing a customer to either opt for products of a specific insurance company or link sale of such products to any banking product."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "It shall be prominently stated in all publicity material distributed by the bank that the purchase by a bank’s customer of any insurance product is purely voluntary and is not linked to availment of any other facility from the bank;"
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A robust internal grievance redressal mechanism shall be put in place along with a Board approved customer compensation policy for resolving issues related to services offered."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "It shall be ensured that the insurance companies whose products are being sold have robust customer grievance redressal arrangements in place."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "The bank shall facilitate the redressal of grievances."
+  },
+  {
+   "actor": "Bank",
+   "modality": "must",
+   "citation": "A bank offering referral services shall do so only for financial products other than insurance, on a non-risk participation basis with prior approval from the RBI."
+  }
+ ]
+}

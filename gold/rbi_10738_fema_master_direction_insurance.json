@@ -1,0 +1,99 @@
+{
+ "url": "https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=10738",
+ "title": "RBI Master Direction - Insurance (FEMA), updated Dec 7, 2021",
+ "topic": "insurer/foreign-exchange",
+ "status": "DRAFT - labelled by Claude from a full read; needs human review",
+ "scope": "obligations/prohibitions/conditions on insurers, policyholders and authorised dealers; pure definitions excluded",
+ "obligations": [
+  {
+   "actor": "Person",
+   "modality": "must_not",
+   "citation": "No person shall take out or renew any policy of insurance in respect of any property in India or any ship or other vessel or aircraft registered in India with an insurer whose principal place of business is outside India without permission of Insurance Regulatory and Development Authority of India (IRDAI)."
+  },
+  {
+   "actor": "Resident",
+   "modality": "may",
+   "citation": "A person resident in India may take or continue to hold a health insurance policy issued by an insurer outside India provided aggregate remittance including amount of premium does not exceed the limits prescribed by RBI under the Liberalised Remittance Scheme (LRS) from time to time."
+  },
+  {
+   "actor": "SEZ unit",
+   "modality": "may",
+   "citation": "Units located in SEZs may take or continue to hold general/health insurance policies from insurers outside India subject to IRDAI Guidelines and Central Government rules provided the premium is paid by the units out of their foreign exchange balances."
+  },
+  {
+   "actor": "Insured",
+   "modality": "must",
+   "citation": "Insurance on Indian marine hulls covering All Risks against war and other allied risks (arising out of civil commotion, political or labour disturbances etc.) is required to be obtained only from the Insurers in India."
+  },
+  {
+   "actor": "Resident",
+   "modality": "may",
+   "citation": "A person resident in India may take or continue to hold a life insurance policy issued by an insurer outside India, provided that the policy is held under a specific or general permission of the Reserve Bank of India."
+  },
+  {
+   "actor": "Policy holder",
+   "modality": "must",
+   "citation": "the policy holder shall repatriate to India through normal banking channels, the maturity proceeds or amount of any claim due on the policy, within a period of seven days from the receipt thereof"
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "However, Insurance cover on risks inside India (including All Risks Insurance) on assets in India owned by Indian branches/offices of foreign companies, banks, etc., may be issued only in INR."
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "Payments in foreign currency towards claims under general/health insurance policies will require prior approval of Reserve Bank, except where premium thereon was also collected in foreign currency."
+  },
+  {
+   "actor": "AD bank",
+   "modality": "must",
+   "citation": "The claim has been admitted by the competent authority of the insurer;"
+  },
+  {
+   "actor": "AD bank",
+   "modality": "must_not",
+   "citation": "Under no circumstances payment in foreign currency be made to a resident beneficiary"
+  },
+  {
+   "actor": "Authorised dealer",
+   "modality": "may",
+   "citation": "Authorised dealer, designated by these insurers may allow remittances falling due under such approved reinsurance arrangements by the insurers in accordance with the terms and conditions laid down by their Boards."
+  },
+  {
+   "actor": "Broker",
+   "modality": "must",
+   "citation": "brokers may remit the premium through the branch of the authorised dealer designated by the insurer in terms of para 9 above subject to the production of undernoted documents:"
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "Insurers should endeavour to keep in their foreign currency accounts only the minimum balances required for normal business and transfer to India regularly all surplus funds held at foreign centres."
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must_not",
+   "citation": "Conversion of Rupee policies on the lives of persons resident in India into foreign currency or transfer of records of such policies to a country outside India is not permitted without prior approval of Reserve Bank."
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "Foreign currency policies in such circumstances shall be converted into rupee policies except in cases where the policy has been in force for at least 3 years"
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "payments in foreign currency will be permitted only in proportion in which the amount of premium has been paid in foreign currency in relation to the total premium payable."
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "may be paid only in rupees by credit to NRO account of the beneficiary."
+  },
+  {
+   "actor": "Insurer",
+   "modality": "must",
+   "citation": "Insurer in India should transfer to India regularly all surplus funds held at foreign centres and endeavour to keep in their foreign currency accounts only minimum balances required for normal business."
+  }
+ ]
+}
