@@ -56,12 +56,13 @@ def openai_compatible_llm() -> tuple[Callable[[str], str], str]:
     from openai import OpenAI
     base = os.environ.get("REG_INTEL_BASE_URL", "https://api.groq.com/openai/v1")
     key = os.environ.get("REG_INTEL_API_KEY") or os.environ["GROQ_API_KEY"]
-    model = os.environ.get("REG_INTEL_MODEL", "llama-3.3-70b-versatile")
+    model = os.environ.get("REG_INTEL_MODEL", "openai/gpt-oss-120b")
     client = OpenAI(api_key=key, base_url=base)
 
     def call(prompt: str) -> str:
         r = client.chat.completions.create(
-            model=model, temperature=0,
+            model=model, temperature=0, max_tokens=8000,
+            response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}])
         return r.choices[0].message.content
 
@@ -70,11 +71,17 @@ def openai_compatible_llm() -> tuple[Callable[[str], str], str]:
 
 def extract_document(db, doc_id: int, llm: Callable[[str], str], model: str) -> dict:
     text = db.execute("SELECT raw_text FROM document WHERE id=?", (doc_id,)).fetchone()[0]
-    kept = dropped = 0
+    kept = dropped = failed = 0
     for chunk in chunks(text):
         out = llm(PROMPT + chunk)
         store.log_event(db, "extract", chunk, out, model, PROMPT_VER)
-        for ob in parse_json(out).get("obligations", []):
+        try:
+            obs = parse_json(out).get("obligations", [])
+        except ValueError:  # JSONDecodeError subclasses ValueError
+            store.log_event(db, "extract_parse_error", chunk, out, model, PROMPT_VER)
+            failed += 1
+            continue
+        for ob in obs:
             grounded = verify_citation(ob.get("citation"), chunk)
             db.execute(
                 "INSERT INTO obligation(doc_id,actor,modality,action,deadline,citation,grounded,model,prompt_ver)"
@@ -85,4 +92,4 @@ def extract_document(db, doc_id: int, llm: Callable[[str], str], model: str) -> 
             kept += grounded
             dropped += not grounded
     db.commit()
-    return {"grounded": kept, "ungrounded": dropped}
+    return {"grounded": kept, "ungrounded": dropped, "parse_errors": failed}

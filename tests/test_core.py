@@ -23,7 +23,7 @@ def test_extract_flags_hallucinated_citation(tmp_path):
         {"actor": "Banks", "modality": "must", "action": "x", "deadline": None,
          "citation": "Banks shall file within 3 days"}]})
     res = extract.extract_document(db, 1, lambda p: "```json\n" + fake + "\n```", "fake")
-    assert res == {"grounded": 1, "ungrounded": 1}
+    assert res == {"grounded": 1, "ungrounded": 1, "parse_errors": 0}
 
 
 def test_ledger_detects_tampering(tmp_path):
@@ -41,3 +41,10 @@ def test_parsers():
     page = '<table class="tablebg"><tr><td>' + "Banks shall comply. " * 40 + '</td></tr></table><table class="tablebg"><tr><td>nav</td></tr></table>'
     assert "Banks shall comply." in fetch_rbi.page_text(page)
     assert "nav" not in fetch_rbi.page_text(page)
+
+
+def test_bad_json_is_logged_not_fatal(tmp_path):
+    db = store.connect(tmp_path / "t.db")
+    db.execute("INSERT INTO document(source,url,title,sha256,raw_text) VALUES('RBI','u','t','h',?)", (SRC,))
+    res = extract.extract_document(db, 1, lambda p: '{"obligations": [oops', "fake")
+    assert res["parse_errors"] == 1 and store.verify_chain(db)
