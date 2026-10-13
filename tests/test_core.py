@@ -74,3 +74,23 @@ def test_precision_human_overrides_draft(tmp_path, monkeypatch):
     p = score.precision("k")
     assert (p["judged"], p["human_reviewed"], p["y"], p["f"], p["n"]) == (3, 1, 1, 1, 1)
     assert p["strict"] == 0.33 and p["lenient"] == 0.67
+
+
+def test_find_lead_in():
+    L = ["12. Agency business shall be undertaken only for permitted products.",
+         "15. Corporate agency shall be subject to the following additional conditions:",
+         "There shall be a Board approved policy for insurance distribution;",
+         "(4) A bank shall ensure customer appropriateness and suitability as under:",
+         "All employees dealing with insurance business shall be qualified;",
+         "(5) It shall be ensured that incentives are not violative of the BR Act;",
+         "16. A bank offering referral services shall do so only for non-insurance products.",
+         "17. A bank shall put in place policies for,",
+         "governing the corporate agency business of insurers undertaken departmentally."]
+    f = extract.find_lead_in
+    assert f(L, 0) == ""                                    # standalone sentence
+    assert f(L, 2) == L[1]                                  # item -> colon lead-in
+    assert f(L, 4) == L[1] + " " + L[3]                     # unmarked item under (4), chained
+    assert f(L, 5) == L[1]                                  # (5) is a sibling of (4), skips it
+    assert f(L, 6) == ""                                    # new numbered paragraph: no lead-in
+    assert f(L, 8) == L[7]                                  # lowercase continuation -> sentence head
+    assert f(["vi) In case of export the insurer is satisfied;", "vii) Claims arising outside India;"], 1) == ""

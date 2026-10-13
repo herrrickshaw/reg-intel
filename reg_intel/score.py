@@ -55,7 +55,7 @@ import csv
 import os
 
 PRECISION_DIR = "gold/precision"
-COLS = ["citation", "modality", "claude_draft", "human", "note"]
+COLS = ["citation", "lead_in", "modality", "claude_draft", "human", "note"]
 
 
 def export_review(db, g: dict, key: str, prompt_ver: str) -> str:
@@ -66,13 +66,13 @@ def export_review(db, g: dict, key: str, prompt_ver: str) -> str:
         old = {r["citation"]: r for r in csv.DictReader(open(path, newline="", encoding="utf-8"))}
     doc = db.execute("SELECT id FROM document WHERE url=?", (g["url"],)).fetchone()[0]
     seen, rows = set(), []
-    for c, m in db.execute("SELECT citation, modality FROM obligation WHERE doc_id=? AND prompt_ver=? ORDER BY id",
-                           (doc, prompt_ver)):
+    for c, m, li in db.execute("SELECT citation, modality, lead_in FROM obligation WHERE doc_id=? AND prompt_ver=? ORDER BY id",
+                               (doc, prompt_ver)):
         if c in seen:
             continue
         seen.add(c)
         prev = old.get(c, {})
-        rows.append({"citation": c, "modality": m, "claude_draft": prev.get("claude_draft", ""),
+        rows.append({"citation": c, "lead_in": li or "", "modality": m, "claude_draft": prev.get("claude_draft", ""),
                      "human": prev.get("human", ""), "note": prev.get("note", "")})
     os.makedirs(PRECISION_DIR, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:

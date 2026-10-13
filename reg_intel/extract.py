@@ -123,17 +123,77 @@ LINES:
 """
 
 
+def doc_lines(text: str, min_len: int = 25) -> list[str]:
+    return [l.strip() for l in text.split("\n") if len(l.strip()) >= min_len]
+
+
 def numbered_batches(text: str, per_batch: int = 40, min_len: int = 25):
-    lines = [l.strip() for l in text.split("\n") if len(l.strip()) >= min_len]
+    lines = doc_lines(text, min_len)
     for k in range(0, len(lines), per_batch):
         yield lines[k:k + per_batch]
+
+
+_MARKER = re.compile(r"^\(?([ivxlc]+|[a-z]|\d+)\)\s", re.I)
+_PARA = re.compile(r"^\d+\.\s")
+_COLON = (":", ":-", ":—", ":–")
+_LISTY_END = (";", " and", ",", " and,")
+
+
+def _marker_kind(line: str) -> str | None:
+    """'digit' for (4)/4), 'roman' for i)/(iii)/vi), 'alpha' for (a)/b); None if unmarked."""
+    m = _MARKER.match(line)
+    if not m:
+        return None
+    t = m.group(1).lower()
+    if t.isdigit():
+        return "digit"
+    return "roman" if re.fullmatch(r"[ivxlc]+", t) and (len(t) > 1 or t in "iv") else "alpha"
+
+
+def _is_leadin(line: str) -> bool:
+    cur = line.rstrip()
+    return cur.endswith(_COLON) or (cur.endswith(".") and bool(re.search(r"\b(following|undernoted)\b", cur[-80:], re.I)))
+
+
+def _is_item(line: str) -> bool:
+    return bool(_MARKER.match(line)) or line.rstrip().endswith(_LISTY_END)
+
+
+def find_lead_in(lines: list[str], i: int, depth: int = 2, window: int = 15) -> str:
+    """Context that makes line i readable on its own, as a single string ('' if none needed/found).
+
+    - A list item (marker like 'ii)' / '(b)', or ending ';' / 'and' / ',') takes the nearest preceding
+      line ending with ':', skipping siblings (same marker kind). A lead-in that is itself an item gets
+      its own lead-in (depth <= 2).
+    - An unmarked line right after a list-ish line (ending ';' / 'and' / ',') belongs to that list.
+    - Otherwise a line starting lowercase continues a sentence: prepend the sentence head.
+    Never crosses the start of an earlier numbered paragraph ('12. ...')."""
+    line = lines[i]
+    kind = _marker_kind(line)
+    tail_of_list = i > 0 and kind is None and lines[i - 1].rstrip().endswith(_LISTY_END) and depth > 0
+    if kind or _is_item(line) or tail_of_list:
+        for j in range(i - 1, max(i - window, -1) - 1, -1):
+            cur = lines[j].rstrip()
+            if _is_leadin(cur) and not (kind and _marker_kind(cur) == kind):
+                up = find_lead_in(lines, j, depth - 1, window) if depth > 0 and _is_item(cur) else ""
+                return (up + " " + cur).strip()
+            if _PARA.match(cur):
+                return ""
+        return ""
+    if line[:1].islower():
+        j = i - 1
+        while j > 0 and lines[j][:1].islower() and not _MARKER.match(lines[j]):
+            j -= 1
+        return " ".join(lines[max(j, 0):i]) if j >= 0 else ""
+    return ""
 
 
 def extract_document_v2(db, doc_id: int, llm: Callable[[str], str], model: str,
                         per_batch: int = 40) -> dict:
     text = db.execute("SELECT raw_text FROM document WHERE id=?", (doc_id,)).fetchone()[0]
     kept = failed = 0
-    for batch in numbered_batches(text, per_batch):
+    all_lines = doc_lines(text)
+    for bstart, batch in zip(range(0, len(all_lines), per_batch), numbered_batches(text, per_batch)):
         prompt = PROMPT_V2 + "\n".join(f"{n}: {l}" for n, l in enumerate(batch))
         out = llm(prompt)
         store.log_event(db, "extract_v2", prompt, out, model, PROMPT_V2_VER)
@@ -148,10 +208,24 @@ def extract_document_v2(db, doc_id: int, llm: Callable[[str], str], model: str,
             if not isinstance(i, int) or not 0 <= i < len(batch):
                 continue
             db.execute(
-                "INSERT INTO obligation(doc_id,actor,modality,action,deadline,citation,grounded,model,prompt_ver)"
-                " VALUES(?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO obligation(doc_id,actor,modality,action,deadline,citation,grounded,model,prompt_ver,lead_in)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (doc_id, ob.get("actor"), ob.get("modality"), ob.get("action"), ob.get("deadline"),
-                 batch[i], 1, model, PROMPT_V2_VER))
+                 batch[i], 1, model, PROMPT_V2_VER, find_lead_in(all_lines, bstart + i)))
             kept += 1
     db.commit()
     return {"selected": kept, "parse_errors": failed}
+
+
+def backfill_lead_in(db, prompt_ver: str = PROMPT_V2_VER) -> int:
+    """Compute lead_in for existing v2 rows from the stored document text (no model call)."""
+    n = 0
+    for did, in db.execute("SELECT DISTINCT doc_id FROM obligation WHERE prompt_ver=?", (prompt_ver,)).fetchall():
+        lines = doc_lines(db.execute("SELECT raw_text FROM document WHERE id=?", (did,)).fetchone()[0])
+        for oid, cit in db.execute("SELECT id, citation FROM obligation WHERE doc_id=? AND prompt_ver=?",
+                                   (did, prompt_ver)).fetchall():
+            if cit in lines:
+                db.execute("UPDATE obligation SET lead_in=? WHERE id=?", (find_lead_in(lines, lines.index(cit)), oid))
+                n += 1
+    db.commit()
+    return n

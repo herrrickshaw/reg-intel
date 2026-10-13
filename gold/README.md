@@ -31,7 +31,15 @@ fragment that needs its lead-in line) or `n` (definition, repeal, header, boiler
 | Doc | Lines | strict | lenient | y / f / n | human-reviewed |
 |---|---|---|---|---|---|
 | 13100 payments banks | 35 | 0.86 | 0.91 | 30 / 2 / 3 | 0 |
-| 10738 FEMA insurance | 55 | 0.76 | 0.98 | 42 / 12 / 1 | 0 |
+| 10738 FEMA insurance | 55 | 0.91 | 0.98 | 50 / 4 / 1 | 0 |
+
+**Lead-in context (v2.1).** Each selected line now carries `lead_in`: the line(s) that make it readable alone
+(`extract.find_lead_in`, computed from the document's own line order, no model call). List items take the nearest
+preceding `:` / "following …" line, skipping same-kind siblings, chained up to 2 levels; a lowercase continuation
+gets its sentence head. Judged with their lead-in, 8 of the 12 FEMA "fragment" rows became real obligations
+(strict 0.76 → 0.91); 13100 was unchanged because its fragments are headers/split-sentence heads, which lead-in
+cannot fix. Known gaps: trailing notes such as "(b) Claims may be settled…" attach to the wrong list item
+(`v) …that:-`); split-sentence *heads* have no lookahead; heuristics tuned on these two documents only.
 
 All verdicts are Claude's draft (single read, same model family as the extractor) — treat as indicative until a person fills `human`.
 Verdicts are matched by line text, so a re-run that selects different lines leaves new lines blank for review.

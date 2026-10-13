@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS document(
 CREATE TABLE IF NOT EXISTS obligation(
   id INTEGER PRIMARY KEY, doc_id INTEGER REFERENCES document(id),
   actor TEXT, modality TEXT, action TEXT, deadline TEXT,
-  citation TEXT, grounded INTEGER, model TEXT, prompt_ver TEXT);
+  citation TEXT, grounded INTEGER, model TEXT, prompt_ver TEXT, lead_in TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS prov_event(
   id INTEGER PRIMARY KEY, prev_hash TEXT, step TEXT, model TEXT, prompt_ver TEXT,
   input_sha TEXT, output_sha TEXT, ts REAL, hash TEXT);
@@ -29,6 +29,8 @@ def connect(path: str | Path = "data/reg_intel.db") -> sqlite3.Connection:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
+    if "lead_in" not in [r[1] for r in db.execute("PRAGMA table_info(obligation)")]:
+        db.execute("ALTER TABLE obligation ADD COLUMN lead_in TEXT DEFAULT ''")  # migrate older DBs
     return db
 
 
