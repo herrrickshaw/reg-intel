@@ -67,7 +67,7 @@ def openai_compatible_llm() -> tuple[Callable[[str], str], str]:
                     model=model, temperature=0, max_tokens=5000,
                     response_format={"type": "json_object"},
                     messages=[{"role": "user", "content": prompt}])
-                return r.choices[0].message.content
+                return r.choices[0].message.content or ""
             except Exception as e:  # noqa: BLE001
                 if getattr(e, "status_code", None) == 400 and "json_validate_failed" in str(e):
                     return ""  # reasoning model ran out of tokens; caller logs a parse error
