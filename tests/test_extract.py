@@ -131,3 +131,38 @@ def test_openai_llm_needs_a_key(monkeypatch):
         monkeypatch.delenv(k, raising=False)
     with pytest.raises(KeyError):
         extract.openai_compatible_llm()
+
+
+def test_openai_llm_returns_empty_string_when_content_is_none(monkeypatch):
+    """A JSON-mode reply with ``content=None`` must surface as "" (the caller's
+    parse-error path), not as ``None`` -- the ``Callable[[str], str]`` contract."""
+    openai = pytest.importorskip("openai")
+
+    class _Msg:
+        content = None
+
+    class _Choice:
+        message = _Msg()
+
+    class _Resp:
+        choices = [_Choice()]
+
+    class _Completions:
+        def create(self, **kwargs):
+            return _Resp()
+
+    class _Chat:
+        completions = _Completions()
+
+    class _FakeClient:
+        def __init__(self, api_key, base_url):
+            self.chat = _Chat()
+
+    monkeypatch.setattr(openai, "OpenAI", _FakeClient)
+    monkeypatch.setenv("REG_INTEL_API_KEY", "test-key-not-real")
+    call, _model = extract.openai_compatible_llm()
+    out = call("prompt")
+    assert out == ""
+    # and the extractor logs it as a parse error instead of crashing on None
+    with pytest.raises(ValueError):
+        extract.parse_json(out)
