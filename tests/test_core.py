@@ -36,9 +36,11 @@ def test_ledger_detects_tampering(tmp_path):
 
 
 def test_parsers():
-    html = '<a class="link2" href=" https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12799 ">Master Directions - PSL</a>'
+    html = ('<a class="link2" href=" https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12799 ">'
+            'Master Directions - PSL</a>')
     assert fetch_rbi.parse_listing(html)[0]["id"] == "12799"
-    page = '<table class="tablebg"><tr><td>' + "Banks shall comply. " * 40 + '</td></tr></table><table class="tablebg"><tr><td>nav</td></tr></table>'
+    page = ('<table class="tablebg"><tr><td>' + "Banks shall comply. " * 40 + '</td></tr></table>'
+            '<table class="tablebg"><tr><td>nav</td></tr></table>')
     assert "Banks shall comply." in fetch_rbi.page_text(page)
     assert "nav" not in fetch_rbi.page_text(page)
 
@@ -63,6 +65,7 @@ def test_v2_cites_source_line_not_model_text(tmp_path):
 
 def test_precision_human_overrides_draft(tmp_path, monkeypatch):
     import csv
+
     from reg_intel import score
     monkeypatch.setattr(score, "PRECISION_DIR", str(tmp_path))
     rows = [{"citation": "a", "modality": "must", "claude_draft": "y", "human": "", "note": ""},
@@ -70,7 +73,9 @@ def test_precision_human_overrides_draft(tmp_path, monkeypatch):
             {"citation": "c", "modality": "must", "claude_draft": "f", "human": "", "note": ""},
             {"citation": "d", "modality": "must", "claude_draft": "", "human": "", "note": ""}]  # unjudged: ignored
     with open(tmp_path / "k.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=score.COLS); w.writeheader(); w.writerows(rows)
+        w = csv.DictWriter(f, fieldnames=score.COLS)
+        w.writeheader()
+        w.writerows(rows)
     p = score.precision("k")
     assert (p["judged"], p["human_reviewed"], p["y"], p["f"], p["n"]) == (3, 1, 1, 1, 1)
     assert p["strict"] == 0.33 and p["lenient"] == 0.67
