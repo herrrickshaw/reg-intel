@@ -2,6 +2,14 @@
 
 Guidance for Claude Code sessions working in this repository.
 
+## Layout and commands
+- Package `reg_intel/`: `fetch_rbi.py` (fetch stage, injectable fetcher) -> `extract.py` (v1/v2 extraction,
+  grounding gate, lead-in) -> `score.py` (gold recall, precision sheets); `store.py` (SQLite + hash-chained
+  ledger); `llm.py` (OpenAI-compatible client behind the `LLM` protocol); `cli.py` (`python -m reg_intel.cli`).
+- Verify with `pytest` and `ruff check .` (both offline). Tests must never call a live model or fetch RBI pages:
+  pass a fake `llm(prompt) -> str` / `fetch(url) -> html` instead.
+- `data/` is generated and gitignored; `gold/` holds labels and URLs only, never RBI text. See README.md.
+
 <!-- source-fetch-toolkit:v1 (managed by ~/bin/add_source_fetch_section.py — edit there, not here) -->
 ## Source fetching for data collection & literature surveys
 

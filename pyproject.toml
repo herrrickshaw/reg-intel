@@ -5,5 +5,20 @@ description = "Auditable regulatory-obligation extraction for Indian banks/insur
 requires-python = ">=3.10"
 dependencies = ["requests", "beautifulsoup4", "openai"]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.setuptools]
+packages = ["reg_intel"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["gold", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-q"

@@ -7,6 +7,8 @@ import sqlite3
 import time
 from pathlib import Path
 
+DEFAULT_DB_PATH = "data/reg_intel.db"  # relative to the working directory; gitignored
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS document(
   id INTEGER PRIMARY KEY, source TEXT, url TEXT UNIQUE, title TEXT,
@@ -22,10 +24,12 @@ CREATE TABLE IF NOT EXISTS prov_event(
 
 
 def sha(s: str) -> str:
+    """Hex SHA-256 of a UTF-8 string."""
     return hashlib.sha256(s.encode()).hexdigest()
 
 
-def connect(path: str | Path = "data/reg_intel.db") -> sqlite3.Connection:
+def connect(path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
+    """Open (creating if needed) the SQLite store and apply the schema and migrations."""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
@@ -34,7 +38,7 @@ def connect(path: str | Path = "data/reg_intel.db") -> sqlite3.Connection:
     return db
 
 
-def log_event(db, step: str, input_text: str, output_text: str,
+def log_event(db: sqlite3.Connection, step: str, input_text: str, output_text: str,
               model: str = "", prompt_ver: str = "") -> str:
     """Append a provenance event chained to the previous one's hash."""
     row = db.execute("SELECT hash FROM prov_event ORDER BY id DESC LIMIT 1").fetchone()
@@ -49,7 +53,7 @@ def log_event(db, step: str, input_text: str, output_text: str,
     return h
 
 
-def verify_chain(db) -> bool:
+def verify_chain(db: sqlite3.Connection) -> bool:
     """True if no provenance event has been altered or removed mid-chain."""
     prev = ""
     for _id, p, step, model, pv, i, o, ts, h in db.execute(
