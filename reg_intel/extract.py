@@ -81,6 +81,7 @@ def openai_compatible_llm() -> tuple[Callable[[str], str], str]:
 def extract_document(db, doc_id: int, llm: Callable[[str], str], model: str) -> dict:
     text = db.execute("SELECT raw_text FROM document WHERE id=?", (doc_id,)).fetchone()[0]
     kept = dropped = failed = 0
+    seen = set()  # chunks overlap by 500 chars: the same citation can come back from two chunks
     for chunk in chunks(text):
         out = llm(PROMPT + chunk)
         store.log_event(db, "extract", chunk, out, model, PROMPT_VER)
@@ -91,6 +92,10 @@ def extract_document(db, doc_id: int, llm: Callable[[str], str], model: str) -> 
             failed += 1
             continue
         for ob in obs:
+            cit_key = json.dumps(ob.get("citation"), sort_keys=True)
+            if cit_key in seen:
+                continue
+            seen.add(cit_key)
             grounded = verify_citation(ob.get("citation"), chunk)
             db.execute(
                 "INSERT INTO obligation(doc_id,actor,modality,action,deadline,citation,grounded,model,prompt_ver)"
