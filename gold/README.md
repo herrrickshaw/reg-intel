@@ -38,8 +38,11 @@ fragment that needs its lead-in line) or `n` (definition, repeal, header, boiler
 preceding `:` / "following …" line, skipping same-kind siblings, chained up to 2 levels; a lowercase continuation
 gets its sentence head. Judged with their lead-in, 8 of the 12 FEMA "fragment" rows became real obligations
 (strict 0.76 → 0.91); 13100 was unchanged because its fragments are headers/split-sentence heads, which lead-in
-cannot fix. Known gaps: trailing notes such as "(b) Claims may be settled…" attach to the wrong list item
-(`v) …that:-`); split-sentence *heads* have no lookahead; heuristics tuned on these two documents only.
+cannot fix. Trailing notes such as "(b) Claims may be settled…" no longer attach to a list nested under the
+previous item (tested on a made-up example; the scores above were not re-measured, and rows stored earlier keep
+their old `lead_in` until `extract.backfill_lead_in` is run). Remaining gaps: split-sentence *heads* have no
+lookahead; heuristics tuned on these two documents only. The citation gate now also requires whole words and
+numbers, so re-run `gold` to check that no label or score has changed.
 
 All verdicts are Claude's draft (single read, same model family as the extractor) — treat as indicative until a person fills `human`.
 Verdicts are matched by line text, so a re-run that selects different lines leaves new lines blank for review.
