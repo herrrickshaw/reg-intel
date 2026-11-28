@@ -34,3 +34,8 @@ def test_trailing_note_skips_the_list_nested_in_its_previous_sibling():
 def test_second_item_of_a_nested_list_keeps_its_own_parent():
     lines = ["A bank must ensure that:", "(a) the form is signed;", "(b) the copy is kept"]
     assert find_lead_in(lines, 2) == "A bank must ensure that:"
+
+
+def test_item_whose_previous_sibling_is_nowhere_above_keeps_its_parent():
+    lines = ["Every insurer shall ensure that:", "(b) the copy is kept"]
+    assert find_lead_in(lines, 1) == "Every insurer shall ensure that:"
