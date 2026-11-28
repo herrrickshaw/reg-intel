@@ -34,7 +34,31 @@ def verify_citation(span: object, source: str) -> bool:
         return bool(span) and all(verify_citation(s, source) for s in span)
     if not isinstance(span, str) or not span.strip():
         return False
-    return _norm(span) in _norm(source)
+    return _contains_whole(_norm(source), _norm(span))
+
+
+def _splits_token(text: str, i: int) -> bool:
+    """True if cutting before index i would split a word, or a number such as 15,230.75."""
+    if i <= 0 or i >= len(text):
+        return False
+    left, right = text[i - 1], text[i]
+    if left.isalnum() and right.isalnum():
+        return True
+    if left.isdigit() and right in ",.":
+        return text[i + 1:i + 2].isdigit()
+    if left in ",." and right.isdigit():
+        return i >= 2 and text[i - 2].isdigit()
+    return False
+
+
+def _contains_whole(source: str, span: str) -> bool:
+    """True if some occurrence of span starts and ends on word/number boundaries."""
+    start = source.find(span)
+    while start >= 0:
+        if not _splits_token(source, start) and not _splits_token(source, start + len(span)):
+            return True
+        start = source.find(span, start + 1)
+    return False
 
 
 def parse_json(text: str) -> dict:
@@ -155,6 +179,47 @@ def _marker_kind(line: str) -> str | None:
     return "roman" if re.fullmatch(r"[ivxlc]+", t) and (len(t) > 1 or t in "iv") else "alpha"
 
 
+_ROMAN = "i ii iii iv v vi vii viii ix x xi xii xiii xiv xv xvi xvii xviii xix xx".split()
+
+
+def _marker(line: str) -> str:
+    m = _MARKER.match(line)
+    return m.group(1).lower() if m else ""
+
+
+def _previous_marker(line: str) -> str | None:
+    """Label of the sibling that should precede this item; None for a first or unmarked item."""
+    kind, label = _marker_kind(line), _marker(line)
+    if kind == "digit":
+        return str(int(label) - 1) if int(label) > 1 else None
+    if kind == "roman":
+        return _ROMAN[_ROMAN.index(label) - 1] if label in _ROMAN[1:] else None
+    if kind == "alpha" and len(label) == 1 and label > "a":
+        return chr(ord(label) - 1)
+    return None
+
+
+def _inside_earlier_sibling(lines: list[str], i: int, j: int, window: int) -> bool:
+    """True if lead-in j sits under item i's previous sibling, so it cannot be i's parent.
+
+    e.g. '(a) ...', 'v) ... that:-', '(1) ...', '(b) ...': the 'v)' list is part of (a)."""
+    prev = _previous_marker(lines[i])
+    if prev is None:
+        return False
+
+    def is_sibling(line: str) -> bool:
+        return _marker(line) == prev and _marker_kind(line) == _marker_kind(lines[i])
+
+    if any(is_sibling(lines[k]) for k in range(j, i)):
+        return False
+    for k in range(j - 1, max(i - window, 0) - 1, -1):
+        if is_sibling(lines[k]):
+            return True
+        if _PARA.match(lines[k]):
+            return False
+    return False
+
+
 def _is_leadin(line: str) -> bool:
     cur = line.rstrip()
     return cur.endswith(_COLON) or (cur.endswith(".") and bool(re.search(r"\b(following|undernoted)\b", cur[-80:], re.I)))
@@ -186,7 +251,8 @@ def find_lead_in(lines: list[str], i: int, depth: int = 2, window: int = 15) -> 
     if kind or _is_item(line) or tail_of_list:
         for j in range(i - 1, max(i - window, -1) - 1, -1):
             cur = lines[j].rstrip()
-            if _is_leadin(cur) and not (kind and _marker_kind(cur) == kind):
+            if (_is_leadin(cur) and not (kind and _marker_kind(cur) == kind)
+                    and not (kind and _inside_earlier_sibling(lines, i, j, window))):
                 up = find_lead_in(lines, j, depth - 1, window) if depth > 0 and _is_item(cur) else ""
                 return (up + " " + cur).strip()
             if _PARA.match(cur):
